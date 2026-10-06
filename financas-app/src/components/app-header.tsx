@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { LayoutDashboard, LogOut, ReceiptText, Wallet } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
 const links = [
@@ -46,6 +47,7 @@ export function AppHeader({ email }: { email: string }) {
             </Link>
           ))}
         </nav>
+        <ThemeToggle />
         <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:inline">{email}</span>
         <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
           <LogOut />

@@ -103,7 +103,11 @@ export default function DashboardPage() {
                           <Cell key={c.name} fill={CATEGORY_COLORS[c.name] ?? "#94a3b8"} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v) => formatBRL(Number(v))} />
+                      <Tooltip
+                        formatter={(v) => formatBRL(Number(v))}
+                        contentStyle={{ background: "var(--popover)", color: "var(--popover-foreground)", border: "1px solid var(--border)", borderRadius: 8 }}
+                        itemStyle={{ color: "var(--popover-foreground)" }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

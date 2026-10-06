@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { BarChart3, Download, ListChecks, ShieldCheck, Smartphone, Wallet } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -21,9 +22,12 @@ export default function Home() {
           </span>
           Finanças Pessoais
         </span>
-        <Button nativeButton={false} render={<Link href="/login" />} variant="ghost">
-          Entrar
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Button nativeButton={false} render={<Link href="/login" />} variant="ghost">
+            Entrar
+          </Button>
+        </div>
       </header>
 
       <section className="mx-auto max-w-3xl px-4 py-20 text-center">

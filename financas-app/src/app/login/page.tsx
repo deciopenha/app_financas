@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Wallet } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,6 +47,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4">
+      <div className="absolute top-3 right-3">
+        <ThemeToggle />
+      </div>
       <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Wallet className="size-4" />
