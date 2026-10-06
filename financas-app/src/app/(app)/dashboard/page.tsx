@@ -3,14 +3,22 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react"
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { createClient } from "@/lib/supabase/client"
 import { CATEGORY_COLORS } from "@/lib/categories"
 import { formatBRL, formatDate, periodRange, summarize } from "@/lib/format"
-import type { Transaction } from "@/lib/types"
+import type { Transaction, TransactionType } from "@/lib/types"
+import { CategoryChart } from "@/components/category-chart"
 import { PeriodFilter } from "@/components/period-filter"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+
+function totalsByCategory(items: Transaction[], type: TransactionType) {
+  const map = new Map<string, number>()
+  for (const t of items) {
+    if (t.type === type) map.set(t.category, (map.get(t.category) ?? 0) + t.amount)
+  }
+  return [...map.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+}
 
 export default function DashboardPage() {
   const now = new Date()
@@ -39,14 +47,8 @@ export default function DashboardPage() {
   }, [year, month])
 
   const { income, expense, balance } = useMemo(() => summarize(items), [items])
-
-  const byCategory = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const t of items) {
-      if (t.type === "despesa") map.set(t.category, (map.get(t.category) ?? 0) + t.amount)
-    }
-    return [...map.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
-  }, [items])
+  const expensesByCategory = useMemo(() => totalsByCategory(items, "despesa"), [items])
+  const incomeByCategory = useMemo(() => totalsByCategory(items, "receita"), [items])
 
   const cards = [
     { label: "Receita total", value: income, icon: ArrowUpCircle, color: "text-emerald-600" },
@@ -84,81 +86,53 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Despesas por categoria</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {byCategory.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                {loading ? "Carregando..." : "Nenhuma despesa no período."}
-              </p>
-            ) : (
-              <>
-                <div className="h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                        {byCategory.map((c) => (
-                          <Cell key={c.name} fill={CATEGORY_COLORS[c.name] ?? "#94a3b8"} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(v) => formatBRL(Number(v))}
-                        contentStyle={{ background: "var(--popover)", color: "var(--popover-foreground)", border: "1px solid var(--border)", borderRadius: 8 }}
-                        itemStyle={{ color: "var(--popover-foreground)" }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {byCategory.map((c) => (
-                    <li key={c.name} className="flex items-center gap-2">
-                      <span className="size-3 rounded-full" style={{ background: CATEGORY_COLORS[c.name] ?? "#94a3b8" }} />
-                      <span className="flex-1">{c.name}</span>
-                      <span className="tabular-nums text-muted-foreground">{formatBRL(c.value)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle>Últimas transações</CardTitle>
-            <Link href="/transacoes" className="text-sm text-primary hover:underline">
-              Ver todas
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {items.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                {loading ? "Carregando..." : "Nenhuma transação no período."}
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {items.slice(0, 6).map((t) => (
-                  <li key={t.id} className="flex items-center gap-3 py-3">
-                    <span className="size-2.5 rounded-full" style={{ background: CATEGORY_COLORS[t.category] ?? "#94a3b8" }} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{t.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.category} · {formatDate(t.date)}
-                      </p>
-                    </div>
-                    <span className={cn("text-sm font-medium tabular-nums", t.type === "receita" ? "text-emerald-600" : "text-rose-600")}>
-                      {t.type === "receita" ? "+" : "−"}
-                      {formatBRL(t.amount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <CategoryChart
+          title="Receitas por categoria"
+          data={incomeByCategory}
+          loading={loading}
+          emptyText="Nenhuma receita no período."
+        />
+        <CategoryChart
+          title="Despesas por categoria"
+          data={expensesByCategory}
+          loading={loading}
+          emptyText="Nenhuma despesa no período."
+        />
       </div>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle>Últimas transações</CardTitle>
+          <Link href="/transacoes" className="text-sm text-primary hover:underline">
+            Ver todas
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              {loading ? "Carregando..." : "Nenhuma transação no período."}
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {items.slice(0, 6).map((t) => (
+                <li key={t.id} className="flex items-center gap-3 py-3">
+                  <span className="size-2.5 rounded-full" style={{ background: CATEGORY_COLORS[t.category] ?? "#94a3b8" }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{t.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.category} · {formatDate(t.date)}
+                    </p>
+                  </div>
+                  <span className={cn("text-sm font-medium tabular-nums", t.type === "receita" ? "text-emerald-600" : "text-rose-600")}>
+                    {t.type === "receita" ? "+" : "−"}
+                    {formatBRL(t.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
